@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bicep Curl Counter</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    video {
+      border: 2px solid black;
+      display: block;
+    }
+
+    canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+
+    .counter {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-size: 24px;
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bicep Curl Counter</h1>
+  <div class="counter">Bicep Curls: <span id="curlCount">0</span></div>
+  <video id="webcam" autoplay playsinline width="640" height="480"></video>
+  <canvas id="overlay" width="640" height="480"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+  <script>
+    let curlCount = 0;
+    let curlInProgress = false;
+
+    async function setupWebcam() {
+      const webcamElement = document.getElementById('webcam');
+      return new Promise((resolve, reject) => {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            webcamElement.srcObject = stream;
+            webcamElement.addEventListener('loadeddata', () => resolve(), false);
+          })
+          .catch(error => reject(error));
+      });
+    }
+
+    function updateCurlCount() {
+      document.getElementById('curlCount').textContent = curlCount;
+    }
+ 
+    function getDistance(pointA, pointB) {
+      const dx = pointA.x - pointB.x;
+      const dy = pointA.y - pointB.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    async function run() {
+      const model = poseDetection.SupportedModels.MoveNet;
+      const detectorConfig = { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING };
+      const detector = await poseDetection.createDetector(model, detectorConfig);
+      await setupWebcam();
+
+      const webcamElement = document.getElementById('webcam');
+      const canvas = document.getElementById('overlay');
+      const ctx = canvas.getContext('2d');
+
+      while (true) {
+        const poses = await detector.estimatePoses(webcamElement);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (poses.length > 0) {
+          poses.forEach(pose => {
+            const leftShoulder = pose.keypoints.find(point => point.name === 'left_shoulder');
+            const leftElbow = pose.keypoints.find(point => point.name === 'left_elbow');
+            const leftWrist = pose.keypoints.find(point => point.name === 'left_wrist');
+
+            if (leftShoulder && leftElbow && leftWrist) {
+        
+              [leftShoulder, leftElbow, leftWrist].forEach(keypoint => {
+                const { x, y, score } = keypoint;
+                if (score > 0.5) {
+                  ctx.beginPath();
+                  ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                  ctx.fillStyle = "red";
+                  ctx.fill();
+                }
+              });
+ 
+              ctx.beginPath();
+              ctx.moveTo(leftShoulder.x, leftShoulder.y);
+              ctx.lineTo(leftElbow.x, leftElbow.y);
+              ctx.lineTo(leftWrist.x, leftWrist.y);
+              ctx.lineWidth = 4;
+              ctx.strokeStyle = 'red';
+              ctx.stroke();
+
+               
+              const distance = getDistance(leftWrist, leftShoulder);
+              if (distance < 50) {  
+                if (!curlInProgress) {
+                  curlInProgress = true;
+                }
+              } else {
+                if (curlInProgress) {
+                  curlCount++;
+                  updateCurlCount();
+                  curlInProgress = false;
+                }
+              }
+            }
+          });
+        }
+
+        await tf.nextFrame();
+      }
+    }
+
+    run();
+  </script>
+</body>
+</html>

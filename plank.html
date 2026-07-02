@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plank Time Recorder</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    video {
+      border: 2px solid black;
+      display: block;
+    }
+
+    canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+
+    .timer {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-size: 24px;
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Plank Time Recorder</h1>
+  <div class="timer">Plank Time: <span id="plankTime">0</span> seconds</div>
+  <video id="webcam" autoplay playsinline width="640" height="480"></video>
+  <canvas id="overlay" width="640" height="480"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+  <script>
+    let plankStartTime = null;
+    let plankInProgress = false;
+    let timerInterval;
+
+    async function setupWebcam() {
+      const webcamElement = document.getElementById('webcam');
+      return new Promise((resolve, reject) => {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            webcamElement.srcObject = stream;
+            webcamElement.addEventListener('loadeddata', () => resolve(), false);
+          })
+          .catch(error => reject(error));
+      });
+    }
+
+    function updatePlankTime() {
+      const elapsedTime = Math.floor((Date.now() - plankStartTime) / 1000);
+      document.getElementById('plankTime').textContent = elapsedTime;
+    }
+
+    function startPlankTimer() {
+      plankStartTime = Date.now();
+      timerInterval = setInterval(updatePlankTime, 1000);
+    }
+
+    function stopPlankTimer() {
+      clearInterval(timerInterval);
+      plankStartTime = null;
+      document.getElementById('plankTime').textContent = 0;
+    }
+ 
+    function getVerticalDistance(pointA, pointB) {
+      return Math.abs(pointA.y - pointB.y);
+    }
+
+    async function run() {
+      const model = poseDetection.SupportedModels.MoveNet;
+      const detectorConfig = { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING };
+      const detector = await poseDetection.createDetector(model, detectorConfig);
+      await setupWebcam();
+
+      const webcamElement = document.getElementById('webcam');
+      const canvas = document.getElementById('overlay');
+      const ctx = canvas.getContext('2d');
+
+      while (true) {
+        const poses = await detector.estimatePoses(webcamElement);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (poses.length > 0) {
+          poses.forEach(pose => {
+            const leftShoulder = pose.keypoints.find(point => point.name === 'left_shoulder');
+            const leftHip = pose.keypoints.find(point => point.name === 'left_hip');
+            const leftAnkle = pose.keypoints.find(point => point.name === 'left_ankle');
+
+            if (leftShoulder && leftHip && leftAnkle) {
+              
+              [leftShoulder, leftHip, leftAnkle].forEach(keypoint => {
+                const { x, y, score } = keypoint;
+                if (score > 0.5) {
+                  ctx.beginPath();
+                  ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                  ctx.fillStyle = "red";
+                  ctx.fill();
+                }
+              });
+
+              
+              ctx.beginPath();
+              ctx.moveTo(leftShoulder.x, leftShoulder.y);
+              ctx.lineTo(leftHip.x, leftHip.y);
+              ctx.lineTo(leftAnkle.x, leftAnkle.y);
+              ctx.lineWidth = 4;
+              ctx.strokeStyle = 'red';
+              ctx.stroke();
+
+              
+              const shoulderHipDist = getVerticalDistance(leftShoulder, leftHip);
+              const hipAnkleDist = getVerticalDistance(leftHip, leftAnkle);
+
+              const threshold = 50;  
+              if (shoulderHipDist < threshold && hipAnkleDist < threshold) {
+                if (!plankInProgress) {
+                  plankInProgress = true;
+                  startPlankTimer();  
+                }
+              } else {
+                if (plankInProgress) {
+                  plankInProgress = false;
+                  stopPlankTimer();  
+                }
+              }
+            }
+          });
+        }
+
+        await tf.nextFrame();
+      }
+    }
+
+    run();
+  </script>
+</body>
+</html>

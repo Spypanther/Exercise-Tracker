@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Website</title>
+    <style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-image: url('gym.gif'); 
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+ 
+header {
+    background-color: #000;
+    padding: 10px 20px;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav .logo {
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+ 
+.banner {
+    background-image: url('banner-image.jpg');  
+    height: 500px;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.banner-content h1 {
+    color: #8a8080;
+    font-size: 54px;
+    font-family: 'georgia';
+    text-transform: uppercase;
+}
+
+.banner-content p {
+    color: #fff;
+    font-size: 18px;
+}
+
+ 
+.info-sections {
+    display: flex;
+    justify-content: space-between;
+    margin: 50px 100px;
+}
+
+.info-box {
+    background-color: #fff;
+    padding: 20px;
+    flex: 1;
+    margin: 0 10px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progression {
+    background-color: #333;
+    color: #fff;
+    transition: box-shadow 0.3s ease;
+}
+.progression:hover {
+    box-shadow: 0 0 10px #625e5d, 0 0 20px #2e2c2b, 0 0 30px #797978;
+}
+
+
+.workout {
+    background-color: #e74c3c;
+    color: #fff;
+    transition: box-shadow 0.3s ease;
+}
+
+.workout:hover {
+    box-shadow: 0 0 10px #f7cbc6, 0 0 20px #fc887b, 0 0 30px #ea867b;
+}
+
+.nutrition {
+    background-color: #27ae60;
+    color: #fff;
+    transition: box-shadow 0.3s ease;
+}
+.nutrition:hover {
+    box-shadow: 0 0 10px #92f456, 0 0 20px #a8e17d, 0 0 30px #79fa3e;
+}
+
+
+h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+p {
+    font-size: 16px;
+}
+a {
+    text-decoration: none;
+}
+
+    </style>
+</head>
+<body>
+     
+     
+
+     
+    <section class="banner">
+        <div class="banner-content">
+            <h1>WORK OUT PLACE</h1>
+            <p></p>
+        </div>
+    </section>
+
+     
+    <section class="info-sections">
+        <a href="bicep curl.html">
+            <div class="info-box progression">
+                <h2>-----BICEP CURL-----</h2>
+                <p>Track your progress...</p>
+            </div>
+        </a>
+        <a href="push up.html">
+            <div class="info-box workout">
+                <h2>------PUSH UP-----</h2>
+                <p>Get the best workout...</p>
+            </div>
+        </a>
+        <a href="plank.html">
+            <div class="info-box nutrition">
+                <h2>-----PLANK------</h2>
+                <p>Eat right to stay fit...</p>
+            </div>
+        </a>
+        
+        
+    </section>
+</body>
+</html>
